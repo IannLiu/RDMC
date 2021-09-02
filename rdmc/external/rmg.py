@@ -56,6 +56,8 @@ def from_rdkit_mol(rdkitmol,
     `RDKit <http://rdkit.org/>`_ to perform the conversion.
     This Kekulizes everything, removing all aromatic atom types.
     """
+    is_carbene = False
+
     mol = mm.Molecule()
     mol.vertices = []
 
@@ -78,7 +80,11 @@ def from_rdkit_mol(rdkitmol,
         charge = rdkitatom.GetFormalCharge()
         radical_electrons = rdkitatom.GetNumRadicalElectrons()
 
-        atom = mm.Atom(element, radical_electrons, charge, '', 0)
+        if radical_electrons == 2 and element.symbol == "C":
+            is_carbene = True
+            atom = mm.Atom(element, 0, charge, '', 1)
+        else:
+            atom = mm.Atom(element, radical_electrons, charge, '', 0)
         mol.vertices.append(atom)
 
         # Add bonds by iterating again through atoms
@@ -112,7 +118,11 @@ def from_rdkit_mol(rdkitmol,
     # Assume this is always true
     # There are cases where 2 radical_electrons is a singlet, but
     # the triplet is often more stable,
-    mol.multiplicity = mol.get_radical_count() + 1
+
+    if is_carbene:
+        mol.multiplicity = 1
+    else:
+        mol.multiplicity = mol.get_radical_count() + 1
     # mol.update_atomtypes()
 
     return mol
