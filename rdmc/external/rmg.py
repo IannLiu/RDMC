@@ -50,13 +50,14 @@ def load_rmg_database(families: list = [],
 def from_rdkit_mol(rdkitmol,
                    sort: bool = False,
                    raise_atomtype_exception: bool = True,
+                   smiles: str = None,
                    ) -> 'Molecule':
     """
     Convert a RDKit Mol object `rdkitmol` to a molecular structure. Uses
     `RDKit <http://rdkit.org/>`_ to perform the conversion.
     This Kekulizes everything, removing all aromatic atom types.
     """
-    is_carbene = False
+    is_carbene_or_nitrene = False
 
     mol = mm.Molecule()
     mol.vertices = []
@@ -80,8 +81,11 @@ def from_rdkit_mol(rdkitmol,
         charge = rdkitatom.GetFormalCharge()
         radical_electrons = rdkitatom.GetNumRadicalElectrons()
 
-        if radical_electrons == 2 and element.symbol == "C":
-            is_carbene = True
+        if (radical_electrons == 2 and element.symbol == "C") or smiles == "[CH2]":
+            is_carbene_or_nitrene = True
+            atom = mm.Atom(element, 0, charge, '', 1)
+        elif (radical_electrons == 2 and element.symbol == "N") or smiles == "[NH]":
+            is_carbene_or_nitrene = True
             atom = mm.Atom(element, 0, charge, '', 1)
         else:
             atom = mm.Atom(element, radical_electrons, charge, '', 0)
@@ -119,7 +123,7 @@ def from_rdkit_mol(rdkitmol,
     # There are cases where 2 radical_electrons is a singlet, but
     # the triplet is often more stable,
 
-    if is_carbene:
+    if is_carbene_or_nitrene:
         mol.multiplicity = 1
     else:
         mol.multiplicity = mol.get_radical_count() + 1

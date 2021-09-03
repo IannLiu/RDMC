@@ -772,6 +772,7 @@ class RDKitMol(object):
         """
         try:
             conf = self.GetConformer(id=id)
+            conf.SetPositions(coords)
         except ValueError as e:
             if id == 0:
                 try:
@@ -780,9 +781,10 @@ class RDKitMol(object):
                     self.EmbedNullConformer()
                 else:
                     conf = self.GetConformer()
+                    conf.SetPositions(coords)
             else:
                 raise
-        conf.SetPositions(coords)
+        
 
     def ToOBMol(self) -> 'openbabel.OBMol':
         """
